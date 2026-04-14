@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  ssh-hardening-task:
+    build: .
+    container_name: ssh-hardening-task
+    ports:
+      - "2222:2222"  # Безопасный порт (студент должен настроить)
+      - "22:22"       # Небезопасный порт (исходный)
+    volumes:
+      - ./check.sh:/usr/local/bin/check.sh:ro
+    stdin_open: true
+    tty: true
+    command: /usr/sbin/sshd -D

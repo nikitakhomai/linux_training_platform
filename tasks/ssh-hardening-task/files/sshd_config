@@ -1,0 +1,47 @@
+# This is an INSECURE SSH configuration for training purposes
+# Student's task: make this configuration secure
+
+# Network
+Port 22
+AddressFamily any
+ListenAddress 0.0.0.0
+
+# Authentication (INSECURE - these are the problems to fix)
+PermitRootLogin yes
+PasswordAuthentication yes
+PermitEmptyPasswords yes
+ChallengeResponseAuthentication yes
+UsePAM yes
+
+# Security (INSECURE - these are the problems to fix)
+MaxAuthTries 6
+MaxSessions 10
+ClientAliveInterval 0
+ClientAliveCountMax 3
+
+# Key authentication
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+
+# Root and users
+AllowUsers root
+DenyUsers nobody
+
+# Logging
+SyslogFacility AUTH
+LogLevel INFO
+
+# X11
+X11Forwarding yes
+X11DisplayOffset 10
+
+# Banner
+# Banner /etc/issue.net
+
+# Subsystems
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+# Additional (INSECURE)
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
