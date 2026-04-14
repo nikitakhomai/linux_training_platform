@@ -1,0 +1,16 @@
+services:
+  orchestration-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - JWT_SECRET_KEY=your-secret-key-change-in-production-min-32-chars-long
+      - KUBERNETES_MODE=false
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./app:/app/app
