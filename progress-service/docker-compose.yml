@@ -1,0 +1,17 @@
+services:
+  progress-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8004"
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - JWT_SECRET_KEY=dev-secret-key
+      - TASK_SERVICE_URL=http://task-service:8001
+      - CHECK_SERVICE_URL=http://check-service:8002
+      - CORS_ORIGINS=*
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./app:/app/app
