@@ -1,9 +1,8 @@
-"""Configuration management for Check Service"""
+"""Configuration management"""
 
-from typing import List, Optional
+from typing import List
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field, field_validator
-import os
+from pydantic import Field
 
 
 class Settings(BaseSettings):
@@ -13,8 +12,8 @@ class Settings(BaseSettings):
         env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="ignore"
     )
 
-    # Service configuration
     SERVICE_NAME: str = "check-service"
+    VERSION: str = "1.0.0"
     ENVIRONMENT: str = Field(default="development")
     DEBUG: bool = Field(default=True)
     HOST: str = "0.0.0.0"
@@ -22,42 +21,25 @@ class Settings(BaseSettings):
 
     # Redis configuration
     REDIS_URL: str = Field(default="redis://localhost:6379/0")
-    REDIS_MAX_CONNECTIONS: int = 10
 
     # Task Service integration
     TASK_SERVICE_URL: str = Field(default="http://localhost:8001")
-    TASK_SERVICE_TIMEOUT: int = 30
 
     # Docker configuration
     DOCKER_TIMEOUT: int = 300
-    DOCKER_MEMORY_LIMIT: str = "512m"
-    DOCKER_CPU_LIMIT: float = 1.0
 
     # Security
-    JWT_SECRET_KEY: str = Field(
-        default="your-secret-key-change-in-production-min-32-chars-long"
-    )
+    JWT_SECRET_KEY: str = Field(default="dev-secret-key")
     JWT_ALGORITHM: str = "HS256"
 
-    # CORS
-    CORS_ORIGINS: List[str] = Field(
-        default=["http://localhost:3000", "http://localhost:8000"]
-    )
+    # CORS - простая строка
+    CORS_ORIGINS: str = Field(default="*")
 
     # Validation settings
     VALIDATION_TIMEOUT: int = 60
-    MAX_VALIDATION_RETRIES: int = 3
 
     # Logging
     LOG_LEVEL: str = Field(default="INFO")
-    LOG_FORMAT: str = Field(default="json")
-
-    @field_validator("CORS_ORIGINS", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, v):
-        if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",")]
-        return v
 
 
 settings = Settings()
