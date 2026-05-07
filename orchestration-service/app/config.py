@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     KUBERNETES_NAMESPACE_PREFIX: str = "student-"
 
     # Docker configuration (fallback)
-    DOCKER_HOST: str = "unix:///var/run/docker.sock"
+    # DOCKER_HOST: str = "unix:///var/run/docker.sock"
     DOCKER_NETWORK: str = "training-network"
 
     # Container defaults
