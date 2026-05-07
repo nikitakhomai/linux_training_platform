@@ -1,26 +1,32 @@
-import api from "./api";
+import { orchestrationClient } from "./api";
 
-export const containersService = {
-  createContainer: async (taskId) => {
-    const response = await api.post("/orchestrate/containers", {
-      task_id: taskId,
-      user_id: parseInt(localStorage.getItem("userId")),
-    });
-    return response.data;
-  },
+export const containersAPI = {
+  create: (taskId, userId) =>
+    orchestrationClient
+      .post("/api/v1/containers/", {
+        task_id: taskId,
+        user_id: userId,
+        docker_image: "src-ssh-hardening-task:latest",
+      })
+      .then((r) => r.data),
 
-  getContainer: async (containerId) => {
-    const response = await api.get(`/orchestrate/containers/${containerId}`);
-    return response.data;
-  },
+  list: () =>
+    orchestrationClient.get("/api/v1/containers/").then((r) => r.data),
 
-  deleteContainer: async (containerId) => {
-    const response = await api.delete(`/orchestrate/containers/${containerId}`);
-    return response.data;
-  },
+  get: (containerId) =>
+    orchestrationClient
+      .get(`/api/v1/containers/${containerId}`)
+      .then((r) => r.data),
 
-  listContainers: async () => {
-    const response = await api.get("/orchestrate/containers");
-    return response.data;
-  },
+  delete: (containerId) =>
+    orchestrationClient
+      .delete(`/api/v1/containers/${containerId}`)
+      .then((r) => r.data),
+
+  getMetrics: (containerId) =>
+    orchestrationClient
+      .get(`/api/v1/containers/${containerId}/metrics`)
+      .then((r) => r.data),
+
+  list: () => orchestrationClient.get('/api/v1/containers/').then(r => r.data),
 };

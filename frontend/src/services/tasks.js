@@ -1,30 +1,9 @@
-import api from "./api";
+import { tasksClient } from './api';
 
-export const tasksService = {
-  getTasks: async (courseId = null) => {
-    const url = courseId
-      ? `/tasks/tasks?course_id=${courseId}`
-      : "/tasks/tasks";
-    const response = await api.get(url);
-    return response.data;
-  },
-
-  getTask: async (taskId) => {
-    const response = await api.get(`/tasks/tasks/${taskId}`);
-    return response.data;
-  },
-
-  getCourses: async () => {
-    const response = await api.get("/tasks/courses");
-    return response.data;
-  },
-
-  submitValidation: async (taskId, containerId) => {
-    const response = await api.post("/check/validate", {
-      task_id: taskId,
-      container_id: containerId,
-      user_id: parseInt(localStorage.getItem("userId")),
-    });
-    return response.data;
-  },
+export const tasksAPI = {
+    getAll: () => tasksClient.get('/tasks/public').then(r => r.data),
+    getCourses: () => tasksClient.get('/courses/public').then(r => r.data),
+    createCourse: (data) => tasksClient.post('/courses/', data).then(r => r.data),
+    createTask: (data) => tasksClient.post('/tasks/', data).then(r => r.data),
+    deleteTask: (id) => tasksClient.delete(`/tasks/${id}`).then(r => r.data),
 };
