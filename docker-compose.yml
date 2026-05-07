@@ -1,0 +1,322 @@
+version: "3.8"
+
+networks:
+  security-platform:
+    driver: bridge
+
+volumes:
+  auth-postgres-data:
+  auth-redis-data:
+  task-postgres-data:
+  task-redis-data:
+  check-redis-data:
+  orch-redis-data:
+  progress-postgres-data:
+
+services:
+  # ============================================
+  # AUTH SERVICE
+  # ============================================
+  auth-postgres:
+    image: postgres:15-alpine
+    container_name: auth-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: auth_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - auth-postgres-data:/var/lib/postgresql/data
+    networks:
+      - security-platform
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  auth-redis:
+    image: redis:7-alpine
+    container_name: auth-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - auth-redis-data:/data
+    networks:
+      - security-platform
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@auth-postgres:5432/auth_db
+      - REDIS_URL=redis://auth-redis:6379/0
+      - SECRET_KEY=development-secret-key-change-me
+      - ENVIRONMENT=development
+      - DEBUG=true
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+      auth-redis:
+        condition: service_healthy
+    networks:
+      - security-platform
+    restart: unless-stopped
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ============================================
+  # TASK SERVICE
+  # ============================================
+  task-postgres:
+    image: postgres:15-alpine
+    container_name: task-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: task_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - task-postgres-data:/var/lib/postgresql/data
+    networks:
+      - security-platform
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  task-redis:
+    image: redis:7-alpine
+    container_name: task-redis
+    ports:
+      - "6380:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - task-redis-data:/data
+    networks:
+      - security-platform
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  task-service:
+    build: ./task-service
+    container_name: task-service
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@task-postgres:5432/task_db
+      - REDIS_URL=redis://task-redis:6379/1
+      - AUTH_SERVICE_URL=http://auth-service:8000
+      - SECRET_KEY=development-secret-key-change-me
+      - ENVIRONMENT=development
+      - DEBUG=true
+    depends_on:
+      task-postgres:
+        condition: service_healthy
+      task-redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    networks:
+      - security-platform
+    restart: unless-stopped
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload
+
+  # ============================================
+  # CHECK SERVICE
+  # ============================================
+  check-redis:
+    image: redis:7-alpine
+    container_name: check-redis
+    ports:
+      - "6381:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - check-redis-data:/data
+    networks:
+      - security-platform
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  check-service:
+    user: root
+    build: ./check-service
+    container_name: check-service
+    ports:
+      - "8002:8002"
+    environment:
+      - REDIS_URL=redis://check-redis:6379/0
+      - TASK_SERVICE_URL=http://task-service:8001
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - JWT_SECRET_KEY=your-secret-key-change-in-production-min-32-chars-long
+      - JWT_ALGORITHM=HS256
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8000
+      - LOG_LEVEL=INFO
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      check-redis:
+        condition: service_healthy
+      task-service:
+        condition: service_started
+    networks:
+      - security-platform
+    restart: unless-stopped
+
+  # ============================================
+  # ORCHESTRATION SERVICE
+  # ============================================
+  orch-redis:
+    image: redis:7-alpine
+    container_name: orch-redis
+    ports:
+      - "6382:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - orch-redis-data:/data
+    networks:
+      - security-platform
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  orchestration-service:
+    build: ./orchestration-service
+    container_name: orchestration-service
+    user: root
+    ports:
+      - "8003:8003"
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - JWT_SECRET_KEY=your-secret-key-change-in-production-min-32-chars-long
+      - KUBERNETES_MODE=false
+      - REDIS_URL=redis://orch-redis:6379/0
+      - TASK_SERVICE_URL=http://task-service:8001
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      orch-redis:
+        condition: service_healthy
+      task-service:
+        condition: service_started
+    networks:
+      - security-platform
+    restart: unless-stopped
+
+  # ============================================
+  # PROGRESS SERVICE
+  # ============================================
+  progress-postgres:
+    image: postgres:15-alpine
+    container_name: progress-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: progress_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - progress-postgres-data:/var/lib/postgresql/data
+    networks:
+      - security-platform
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  progress-service:
+    build: ./progress-service
+    container_name: progress-service
+    ports:
+      - "8004:8004"
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@progress-postgres:5432/progress_db
+      - TASK_SERVICE_URL=http://task-service:8001
+      - CHECK_SERVICE_URL=http://check-service:8002
+      - JWT_SECRET_KEY=dev-secret-key
+      - CORS_ORIGINS=*
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./progress-service/app:/app/app
+    depends_on:
+      progress-postgres:
+        condition: service_healthy
+      task-service:
+        condition: service_started
+      check-service:
+        condition: service_started
+    networks:
+      - security-platform
+    restart: unless-stopped
+
+  # ============================================
+  # SSH HARDENING TASK (Training Container)
+  # ============================================
+  # ssh-hardening-task:
+  #   build: ./tasks/ssh-hardening-task
+  #   container_name: ssh-hardening-task
+  #   ports:
+  #     - "2222:2222" # Безопасный порт (студент должен настроить)
+  #     - "22:22" # Небезопасный порт (исходный)
+  #   volumes:
+  #     - ./tasks/ssh-hardening-task/check.sh:/usr/local/bin/check.sh:ro
+  #   stdin_open: true
+  #   tty: true
+  #   networks:
+  #     - security-platform
+  #   restart: unless-stopped
+  #   command: /usr/sbin/sshd -D
+
+  # ============================================
+  # FRONTEND
+  # ============================================
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_AUTH_URL=http://localhost:8000
+      - REACT_APP_TASKS_URL=http://localhost:8001
+      - REACT_APP_CHECK_URL=http://localhost:8002
+      - REACT_APP_ORCHESTRA_URL=http://localhost:8003
+      - REACT_APP_PROGRESS_URL=http://localhost:8004
+    depends_on:
+      - auth-service
+      - task-service
+      - check-service
+      - orchestration-service
+      - progress-service
+    networks:
+      - security-platform
+    restart: unless-stopped

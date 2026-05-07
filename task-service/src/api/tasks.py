@@ -10,6 +10,31 @@ from src.schemas.task import TaskCreate, TaskUpdate, TaskResponse
 router = APIRouter()
 
 
+@router.get("/public", response_model=List[TaskResponse])
+async def read_public_tasks(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
+    course_id: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db),
+):
+    """Public endpoint - no authentication required"""
+    tasks = await crud_task.get_multi(
+        db, skip=skip, limit=limit, course_id=course_id, is_published=True
+    )
+    return tasks
+
+
+@router.get("/public/courses", response_model=List[dict])
+async def read_public_courses(
+    db: AsyncSession = Depends(get_db),
+):
+    """Public endpoint - get all courses"""
+    from src.crud.course import crud_course
+
+    courses = await crud_course.get_multi(db, is_published=True)
+    return courses
+
+
 @router.get("/", response_model=List[TaskResponse])
 async def read_tasks(
     skip: int = Query(0, ge=0),

@@ -29,7 +29,7 @@ RUN mkdir -p /var/run/sshd && \
 
 # Копируем НЕБЕЗОПАСНУЮ конфигурацию SSH (задание - сделать безопасной)
 # Это исходное состояние, которое студент должен исправить
-COPY files/sshd_config_insecure /etc/ssh/sshd_config
+COPY files/sshd_config /etc/ssh/sshd_config
 
 # Копируем скрипт проверки
 COPY check.sh /usr/local/bin/check.sh

@@ -1,4 +1,4 @@
-from fastapi import Request  # Make sure this import is added
+from fastapi import Request
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
@@ -9,6 +9,24 @@ from src.crud.course import crud_course
 from src.schemas.course import CourseCreate, CourseUpdate, CourseResponse
 
 router = APIRouter()
+
+# ============================================
+# ПУБЛИЧНЫЕ ЭНДПОИНТЫ (без авторизации) - ДОЛЖНЫ БЫТЬ ПЕРВЫМИ!
+# ============================================
+
+
+@router.get("/public", response_model=List[CourseResponse])
+async def get_public_courses(
+    db: AsyncSession = Depends(get_db),
+):
+    """Public endpoint - get all published courses (no auth required)"""
+    courses = await crud_course.get_multi(db, is_published=True)
+    return courses
+
+
+# ============================================
+# ЗАЩИЩЕННЫЕ ЭНДПОИНТЫ
+# ============================================
 
 
 @router.get("/", response_model=List[CourseResponse])
@@ -40,19 +58,13 @@ async def read_course(
 
 @router.post("/", response_model=CourseResponse)
 async def create_course(
-    request: Request,  # Get raw request
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_admin_user),
 ):
-    # Получаем сырые данные из тела запроса
     body = await request.json()
     print(f"\n🎯🎯🎯 RAW REQUEST BODY: {body}")
-
-    # Создаем Pydantic модель вручную из полученного словаря
-    from src.schemas.course import CourseCreate
-
     course_data = CourseCreate(**body)
-
     course = await crud_course.create(db, course_data)
     return course
 
