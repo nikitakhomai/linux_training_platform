@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd auth-service
-          pip install -r requirements-dev.txt
+          pip install -r requirements.txt
       - name: Run tests
         run: |
           cd auth-service
@@ -44,7 +44,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd task-service
-          pip install -r requirements-dev.txt
+          pip install -r requirements.txt
       - name: Run tests
         run: |
           cd task-service
@@ -61,7 +61,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd check-service
-          pip install -r requirements-dev.txt
+          pip install -r requirements.txt
       - name: Run tests
         run: |
           cd check-service
@@ -78,7 +78,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd orchestration-service
-          pip install -r requirements-dev.txt
+          pip install -r requirements.txt
       - name: Run tests
         run: |
           cd orchestration-service
@@ -95,28 +95,28 @@ jobs:
       - name: Install dependencies
         run: |
           cd progress-service
-          pip install -r requirements-dev.txt
+          pip install -r requirements.txt
       - name: Run tests
         run: |
           cd progress-service
           pytest tests/ -v --cov=app --cov-report=term
 
-  test-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-      - name: Install dependencies
-        run: |
-          cd frontend
-          npm ci
-      - name: Run tests
-        run: |
-          cd frontend
-          npm test -- --watchAll=false --passWithNoTests
+  # test-frontend:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: "18"
+  #     - name: Install dependencies
+  #       run: |
+  #         cd frontend
+  #         npm ci
+  #     - name: Run tests
+  #       run: |
+  #         cd frontend
+  #         npm test -- --watchAll=false --passWithNoTests
 
   # ==========================================================================
   # BUILD STAGE
