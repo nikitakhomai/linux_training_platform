@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd auth-service
-          pip install pytest pytest-asyncio pytest-cov httpx
+          pip install -r requirements-dev.txt
       - name: Run tests
         run: |
           cd auth-service
@@ -44,7 +44,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd task-service
-          pip install pytest pytest-asyncio pytest-cov httpx
+          pip install -r requirements-dev.txt
       - name: Run tests
         run: |
           cd task-service
@@ -61,7 +61,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd check-service
-          pip install pytest pytest-asyncio pytest-cov httpx
+          pip install -r requirements-dev.txt
       - name: Run tests
         run: |
           cd check-service
@@ -78,7 +78,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd orchestration-service
-          pip install pytest pytest-asyncio pytest-cov httpx
+          pip install -r requirements-dev.txt
       - name: Run tests
         run: |
           cd orchestration-service
@@ -95,7 +95,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd progress-service
-          pip install pytest pytest-asyncio pytest-cov httpx
+          pip install -r requirements-dev.txt
       - name: Run tests
         run: |
           cd progress-service
