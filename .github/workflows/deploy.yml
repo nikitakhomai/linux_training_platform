@@ -125,7 +125,8 @@ jobs:
   build-auth:
     runs-on: ubuntu-latest
     needs: [test-auth]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: always()
+    # if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -148,7 +149,8 @@ jobs:
   build-task:
     runs-on: ubuntu-latest
     needs: [test-task]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: always()
+    # if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -171,7 +173,8 @@ jobs:
   build-check:
     runs-on: ubuntu-latest
     needs: [test-check]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: always()
+    # if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -194,7 +197,8 @@ jobs:
   build-orchestration:
     runs-on: ubuntu-latest
     needs: [test-orchestration]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: always()
+    # if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -217,7 +221,8 @@ jobs:
   build-progress:
     runs-on: ubuntu-latest
     needs: [test-progress]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: always()
+    # if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
