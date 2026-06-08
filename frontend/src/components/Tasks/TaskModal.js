@@ -10,26 +10,54 @@ const TaskModal = ({ task, onClose }) => {
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
     const [showTerminal, setShowTerminal] = useState(false);
+    const [isRestarting, setIsRestarting] = useState(false);
     const { user } = useAuth();
+
+    // Проверка существования контейнера
+    const checkContainerExists = async (id) => {
+        try {
+            const response = await fetch(`http://localhost:8003/api/v1/containers/${id}`, {
+                headers: { 'X-User-ID': user.id.toString() }
+            });
+            return response.status === 200;
+        } catch {
+            return false;
+        }
+    };
 
     // Загружаем сохраненное состояние при монтировании
     useEffect(() => {
-        console.log('TaskModal mounted for task:', task?.id);
-        const saved = localStorage.getItem(`task_${task?.id}_state`);
-        console.log('Saved state:', saved);
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                if (data.containerId && !data.isCompleted) {
-                    setContainerId(data.containerId);
-                    setContainerName(data.containerName);
-                    setResult(data.result || null);
+        const loadSavedContainer = async () => {
+            console.log('TaskModal mounted for task:', task?.id);
+            const saved = localStorage.getItem(`task_${task?.id}_state`);
+            console.log('Saved state:', saved);
+            
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    if (data.containerId && !data.isCompleted) {
+                        // Проверяем, существует ли контейнер в Docker
+                        const exists = await checkContainerExists(data.containerId);
+                        if (exists) {
+                            setContainerId(data.containerId);
+                            setContainerName(data.containerName);
+                            setResult(data.result || null);
+                            toast.success('Reconnected to existing container');
+                        } else {
+                            // Контейнер не существует, очищаем сохранение
+                            localStorage.removeItem(`task_${task?.id}_state`);
+                            toast.error('Container expired. Please start a new one.');
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to load saved state:', e);
+                    localStorage.removeItem(`task_${task?.id}_state`);
                 }
-            } catch (e) {
-                console.error('Failed to load saved state:', e);
             }
-        }
-    }, [task?.id]);
+        };
+        
+        loadSavedContainer();
+    }, [task?.id, user.id]);
 
     // Сохраняем состояние
     useEffect(() => {
@@ -70,11 +98,63 @@ const TaskModal = ({ task, onClose }) => {
         }
     };
 
+    const restartTask = async () => {
+        setIsRestarting(true);
+        try {
+            // Удаляем старый контейнер, если есть
+            if (containerId) {
+                await fetch(`http://localhost:8003/api/v1/containers/${containerId}`, {
+                    method: 'DELETE',
+                    headers: { 'X-User-ID': user.id.toString() }
+                });
+            }
+            // Очищаем состояние
+            localStorage.removeItem(`task_${task.id}_state`);
+            setContainerId(null);
+            setContainerName(null);
+            setResult(null);
+            // Запускаем новый
+            const response = await fetch('http://localhost:8003/api/v1/containers/', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-User-ID': user.id.toString(),
+                    'X-User-Role': user.role
+                },
+                body: JSON.stringify({
+                    task_id: task.id,
+                    user_id: user.id,
+                    docker_image: 'src-ssh-hardening-task:latest'
+                })
+            });
+            const data = await response.json();
+            setContainerId(data.container_id);
+            setContainerName(data.name);
+            toast.success('Task restarted! New container created.');
+        } catch (error) {
+            toast.error('Failed to restart task');
+        } finally {
+            setIsRestarting(false);
+        }
+    };
+
     const validate = async () => {
         if (!containerId) {
             toast.error('Start container first');
             return;
         }
+        
+        // Проверяем, существует ли контейнер перед валидацией
+        const exists = await checkContainerExists(containerId);
+        if (!exists) {
+            toast.error('Container expired. Please restart the task.');
+            localStorage.removeItem(`task_${task.id}_state`);
+            setContainerId(null);
+            setContainerName(null);
+            setResult(null);
+            return;
+        }
+        
         setLoading(true);
         try {
             const response = await fetch('http://localhost:8002/api/v1/validation/validate', {
@@ -108,6 +188,17 @@ const TaskModal = ({ task, onClose }) => {
     const completeTask = async () => {
         if (!containerId) {
             toast.error('Start container first');
+            return;
+        }
+        
+        // Проверяем существование контейнера
+        const exists = await checkContainerExists(containerId);
+        if (!exists) {
+            toast.error('Container expired. Cannot complete task.');
+            localStorage.removeItem(`task_${task.id}_state`);
+            setContainerId(null);
+            setContainerName(null);
+            setResult(null);
             return;
         }
         
@@ -217,6 +308,9 @@ const TaskModal = ({ task, onClose }) => {
                             </button>
                             <button className="btn btn-primary" onClick={completeTask} disabled={loading} style={{ background: '#10b981' }}>
                                 🎉 Complete Task
+                            </button>
+                            <button className="btn btn-warning" onClick={restartTask} disabled={isRestarting} style={{ background: '#f59e0b', color: '#1e1e1e' }}>
+                                🔄 Restart Task
                             </button>
                         </>
                     )}

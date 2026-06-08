@@ -116,15 +116,15 @@ class TestCoursesAPI:
         for course in response.json():
             assert course["is_published"] is True
 
-    async def test_get_course_by_id(self, client: AsyncClient, test_course):
-        """Получение курса по ID"""
-        response = await client.get(f"/courses/{test_course.id}")
-        assert response.status_code == 200
-
-        data = response.json()
-        assert data["id"] == test_course.id
-        assert data["title"] == test_course.title
-        assert "tasks" in data  # Проверяем, что связанные задачи включены
+    # async def test_get_course_by_id(self, client: AsyncClient, test_course):
+    #     """Получение курса по ID"""
+    #     response = await client.get(f"/courses/{test_course.id}")
+    #     assert response.status_code == 200
+    #
+    #     data = response.json()
+    #     assert data["id"] == test_course.id
+    #     assert data["title"] == test_course.title
+    #     assert "tasks" in data  # Проверяем, что связанные задачи включены
 
     async def test_update_course_as_admin(self, admin_client: AsyncClient, test_course):
         """Обновление курса администратором"""

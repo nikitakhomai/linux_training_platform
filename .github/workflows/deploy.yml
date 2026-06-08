@@ -12,11 +12,137 @@ env:
 
 jobs:
   # ==========================================================================
+  # LINT STAGE
+  # ==========================================================================
+
+  lint-auth:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install linting tools
+        run: |
+          pip install flake8 black isort
+      - name: Run flake8
+        run: |
+          cd auth-service
+          flake8 src/ --max-line-length=120 --ignore=E203,W503
+      - name: Run black check
+        run: |
+          cd auth-service
+          black --check src/ --line-length=120
+      - name: Run isort check
+        run: |
+          cd auth-service
+          isort --check-only src/
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+
+  lint-task:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install linting tools
+        run: |
+          pip install flake8 black isort
+      - name: Run flake8
+        run: |
+          cd task-service
+          flake8 src/ --max-line-length=120 --ignore=E203,W503
+      - name: Run black check
+        run: |
+          cd task-service
+          black --check src/ --line-length=120
+      - name: Run isort check
+        run: |
+          cd task-service
+          isort --check-only src/
+
+  lint-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install linting tools
+        run: |
+          pip install flake8 black isort
+      - name: Run flake8
+        run: |
+          cd check-service
+          flake8 app/ --max-line-length=120 --ignore=E203,W503
+      - name: Run black check
+        run: |
+          cd check-service
+          black --check app/ --line-length=120
+      - name: Run isort check
+        run: |
+          cd check-service
+          isort --check-only app/
+
+  lint-orchestration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install linting tools
+        run: |
+          pip install flake8 black isort
+      - name: Run flake8
+        run: |
+          cd orchestration-service
+          flake8 app/ --max-line-length=120 --ignore=E203,W503
+      - name: Run black check
+        run: |
+          cd orchestration-service
+          black --check app/ --line-length=120
+      - name: Run isort check
+        run: |
+          cd orchestration-service
+          isort --check-only app/
+
+  lint-progress:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install linting tools
+        run: |
+          pip install flake8 black isort
+      - name: Run flake8
+        run: |
+          cd progress-service
+          flake8 app/ --max-line-length=120 --ignore=E203,W503
+      - name: Run black check
+        run: |
+          cd progress-service
+          black --check app/ --line-length=120
+      - name: Run isort check
+        run: |
+          cd progress-service
+          isort --check-only app/
+
+  # ==========================================================================
   # TEST STAGE
   # ==========================================================================
 
   test-auth:
     runs-on: ubuntu-latest
+    needs: [lint-auth]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
@@ -27,6 +153,7 @@ jobs:
         run: |
           cd auth-service
           pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov
       - name: Run tests
         run: |
           cd auth-service
@@ -35,6 +162,7 @@ jobs:
 
   test-task:
     runs-on: ubuntu-latest
+    needs: [lint-task]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
@@ -45,6 +173,7 @@ jobs:
         run: |
           cd task-service
           pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov
       - name: Run tests
         run: |
           cd task-service
@@ -52,6 +181,7 @@ jobs:
 
   test-check:
     runs-on: ubuntu-latest
+    needs: [lint-check]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
@@ -62,6 +192,7 @@ jobs:
         run: |
           cd check-service
           pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov
       - name: Run tests
         run: |
           cd check-service
@@ -69,6 +200,7 @@ jobs:
 
   test-orchestration:
     runs-on: ubuntu-latest
+    needs: [lint-orchestration]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
@@ -79,6 +211,7 @@ jobs:
         run: |
           cd orchestration-service
           pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov
       - name: Run tests
         run: |
           cd orchestration-service
@@ -86,6 +219,7 @@ jobs:
 
   test-progress:
     runs-on: ubuntu-latest
+    needs: [lint-progress]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
@@ -96,6 +230,7 @@ jobs:
         run: |
           cd progress-service
           pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov
       - name: Run tests
         run: |
           cd progress-service
